@@ -25,6 +25,10 @@
                  node.previousElementSibling.textContent.trim() === '')) {
                 event.preventDefault();
             }
+        } else if (this.options.insertBrOnReturn || element.getAttribute('data-insert-br-on-return')) {
+            event.preventDefault();
+            var br = MediumEditor.util.isIE ? '<br />' : '<br /><br />';
+            MediumEditor.util.insertHTMLCommand(this.options.ownerDocument, br);
         }
     }
 
@@ -149,7 +153,7 @@
             return;
         }
 
-        if (MediumEditor.util.isMediumEditorElement(node) && node.children.length === 0) {
+        if (MediumEditor.util.isMediumEditorElement(node) && node.children.length === 0 && !this.options.insertBrOnReturn) {
             this.options.ownerDocument.execCommand('formatBlock', false, 'p');
         }
 
@@ -164,7 +168,7 @@
             // For anchor tags, unlink
             if (tagName === 'a') {
                 this.options.ownerDocument.execCommand('unlink', false, null);
-            } else if (!event.shiftKey && !event.ctrlKey) {
+            } else if (!event.shiftKey && !event.ctrlKey && !this.options.insertBrOnReturn) {
                 this.options.ownerDocument.execCommand('formatBlock', false, 'p');
             }
         }
@@ -384,11 +388,11 @@
         }
 
         // disabling return or double return
-        if (this.options.disableReturn || this.options.disableDoubleReturn) {
+        if (this.options.disableReturn || this.options.disableDoubleReturn || this.options.insertBrOnReturn) {
             this.subscribe('editableKeydownEnter', handleDisabledEnterKeydown.bind(this));
         } else {
             for (i = 0; i < this.elements.length; i += 1) {
-                if (this.elements[i].getAttribute('data-disable-return') || this.elements[i].getAttribute('data-disable-double-return')) {
+                if (this.elements[i].getAttribute('data-disable-return') || this.elements[i].getAttribute('data-disable-double-return')|| this.elements[i].getAttribute('data-insert-br-on-return')) {
                     this.subscribe('editableKeydownEnter', handleDisabledEnterKeydown.bind(this));
                     break;
                 }

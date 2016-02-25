@@ -4172,6 +4172,7 @@ MediumEditor.extensions = {};
                 documentModified = this.removeObsoleteAutoLinkSpans(blockElements[i]) || documentModified;
                 documentModified = this.performLinkingWithinElement(blockElements[i]) || documentModified;
             }
+            this.base.events.updateInput(contenteditable, { target: contenteditable, currentTarget: contenteditable });
             return documentModified;
         },
 
@@ -5980,6 +5981,10 @@ MediumEditor.extensions = {};
                  node.previousElementSibling.textContent.trim() === '')) {
                 event.preventDefault();
             }
+        } else if (this.options.insertBrOnReturn || element.getAttribute('data-insert-br-on-return')) {
+            event.preventDefault();
+            var br = MediumEditor.util.isIE ? '<br />' : '<br /><br />';
+            MediumEditor.util.insertHTMLCommand(this.options.ownerDocument, br);
         }
     }
 
@@ -6104,20 +6109,23 @@ MediumEditor.extensions = {};
             return;
         }
 
-        if (MediumEditor.util.isMediumEditorElement(node) && node.children.length === 0) {
+        if (MediumEditor.util.isMediumEditorElement(node) && node.children.length === 0 && !this.options.insertBrOnReturn) {
             this.options.ownerDocument.execCommand('formatBlock', false, 'p');
         }
 
-        if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.ENTER) && !MediumEditor.util.isListItem(node)) {
+        // https://github.com/yabwe/medium-editor/issues/834
+        // https://github.com/yabwe/medium-editor/pull/382
+        // Don't call format block if this is a block element (ie h1, figCaption, etc.)
+        if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.ENTER) &&
+            !MediumEditor.util.isListItem(node) &&
+            !MediumEditor.util.isBlockContainer(node)) {
+
             tagName = node.nodeName.toLowerCase();
             // For anchor tags, unlink
             if (tagName === 'a') {
                 this.options.ownerDocument.execCommand('unlink', false, null);
-            } else if (!event.shiftKey && !event.ctrlKey) {
-                // only format block if this is not a header tag
-                if (!/h\d/.test(tagName)) {
-                    this.options.ownerDocument.execCommand('formatBlock', false, 'p');
-                }
+            } else if (!event.shiftKey && !event.ctrlKey && !this.options.insertBrOnReturn) {
+                this.options.ownerDocument.execCommand('formatBlock', false, 'p');
             }
         }
     }
@@ -6336,11 +6344,11 @@ MediumEditor.extensions = {};
         }
 
         // disabling return or double return
-        if (this.options.disableReturn || this.options.disableDoubleReturn) {
+        if (this.options.disableReturn || this.options.disableDoubleReturn || this.options.insertBrOnReturn) {
             this.subscribe('editableKeydownEnter', handleDisabledEnterKeydown.bind(this));
         } else {
             for (i = 0; i < this.elements.length; i += 1) {
-                if (this.elements[i].getAttribute('data-disable-return') || this.elements[i].getAttribute('data-disable-double-return')) {
+                if (this.elements[i].getAttribute('data-disable-return') || this.elements[i].getAttribute('data-disable-double-return')|| this.elements[i].getAttribute('data-insert-br-on-return')) {
                     this.subscribe('editableKeydownEnter', handleDisabledEnterKeydown.bind(this));
                     break;
                 }
@@ -7053,6 +7061,7 @@ MediumEditor.extensions = {};
         delay: 0,
         disableReturn: false,
         disableDoubleReturn: false,
+        insertBrOnReturn: false,
         disableExtraSpaces: false,
         disableEditing: false,
         autoLink: false,
