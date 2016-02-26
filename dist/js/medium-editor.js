@@ -5974,7 +5974,6 @@ MediumEditor.extensions = {};
             event.preventDefault();
         } else if (this.options.disableDoubleReturn || element.getAttribute('data-disable-double-return')) {
             var node = MediumEditor.selection.getSelectionStart(this.options.ownerDocument);
-
             // if current text selection is empty OR previous sibling text is empty OR it is not a list
             if ((node && node.textContent.trim() === '' && node.nodeName.toLowerCase() !== 'li') ||
                 (node.previousElementSibling && node.previousElementSibling.nodeName.toLowerCase() !== 'br' &&
@@ -5983,8 +5982,14 @@ MediumEditor.extensions = {};
             }
         } else if (this.options.insertBrOnReturn || element.getAttribute('data-insert-br-on-return')) {
             event.preventDefault();
-            var br = MediumEditor.util.isIE ? '<br />' : '<br /><br />';
+            var range = MediumEditor.selection.getSelectionRange(this.options.ownerDocument),
+                br = '<br />';
+            // Chrome and FF won't move the cursor behind the last br tag in a container
+            if (!MediumEditor.util.isIE && (!range.endContainer.length || range.endOffset === range.endContainer.length)) {
+                br += '<br />';
+            }
             MediumEditor.util.insertHTMLCommand(this.options.ownerDocument, br);
+
         }
     }
 
