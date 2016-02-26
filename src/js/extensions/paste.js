@@ -126,7 +126,7 @@
                     return this.cleanPaste(pastedHTML);
                 }
 
-                if (!(this.getEditorOption('disableReturn') || element.getAttribute('data-disable-return'))) {
+                if (!(this.getEditorOption('disableReturn') || element.getAttribute('data-disable-return')) && !(this.getEditorOption('insertBrOnReturn') || element.getAttribute('data-insert-br-on-return'))) {
                     paragraphs = pastedPlain.split(/[\r\n]+/g);
                     // If there are no \r\n in data, don't wrap in <p>
                     if (paragraphs.length > 1) {
